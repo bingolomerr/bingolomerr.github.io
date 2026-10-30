@@ -1,0 +1,1790 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0d021a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Lumina Loop - Synthwave 2D Endless Runner</title>
+  <style>
+    /* ==========================================================================
+       LUMINA LOOP - VIBRANT PALETTE SYNTHWAVE STYLES
+       ========================================================================== */
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:ital,wght@0,400;0,700;0,900;1,900&family=Rajdhani:wght@500;600;700&display=swap');
+
+    :root {
+      --bg-dark: #0a0515;
+      --bg-purple: #1a0b35;
+      --neon-cyan: #22d3ee;
+      --neon-pink: #ec4899;
+      --neon-magenta: #ff00ff;
+      --neon-violet: #4a00e0;
+      --neon-green: #00ff88;
+      --neon-yellow: #ffe600;
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --text-glow: 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-dark);
+      font-family: 'Rajdhani', sans-serif;
+      color: #fff;
+      touch-action: none;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(180deg, #0a0515 0%, #1a0b35 100%);
+      overflow: hidden;
+    }
+
+    /* Ambient Perspective Grid Texture */
+    .bg-grid-overlay {
+      position: absolute;
+      inset: 0;
+      opacity: 0.22;
+      background-image: linear-gradient(#4a00e0 1px, transparent 1px), linear-gradient(90deg, #4a00e0 1px, transparent 1px);
+      background-size: 40px 40px;
+      transform: perspective(500px) rotateX(60deg) translateY(0);
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      z-index: 1;
+    }
+
+    /* UI Overlay Layer */
+    .ui-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Vibrant Accent Bottom Line */
+    .vibrant-bottom-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: #ec4899;
+      box-shadow: 0 0 15px #ff00ff;
+      z-index: 25;
+      pointer-events: none;
+    }
+
+    /* In-Game HUD */
+    #hud {
+      display: none;
+      width: 100%;
+      padding: env(safe-area-inset-top, 16px) 20px 10px 20px;
+      justify-content: space-between;
+      align-items: flex-start;
+      z-index: 15;
+    }
+
+    .hud-box {
+      background: rgba(10, 5, 21, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 8px 18px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 15px rgba(34, 211, 238, 0.25);
+    }
+
+    .hud-label {
+      font-size: 10px;
+      letter-spacing: 2px;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .hud-value {
+      font-family: 'Orbitron', monospace;
+      font-size: 24px;
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 0 10px var(--neon-cyan);
+    }
+
+    .hud-center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .jump-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(10, 5, 21, 0.6);
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 11px;
+      letter-spacing: 1px;
+      font-weight: 700;
+      backdrop-filter: blur(10px);
+    }
+
+    .jump-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #444;
+      transition: all 0.2s ease;
+    }
+
+    .jump-dot.active {
+      background: var(--neon-cyan);
+      box-shadow: 0 0 8px var(--neon-cyan);
+    }
+
+    .jump-dot.double.active {
+      background: var(--neon-pink);
+      box-shadow: 0 0 8px var(--neon-pink);
+    }
+
+    .hud-right {
+      display: flex;
+      gap: 8px;
+      pointer-events: auto;
+    }
+
+    .hud-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--glass-border);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 18px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      transition: transform 0.1s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .hud-btn:active {
+      transform: scale(0.92);
+      border-color: var(--neon-pink);
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Menus & Glass Cards */
+    .menu-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px 20px;
+      pointer-events: auto;
+      z-index: 20;
+      background: rgba(10, 5, 21, 0.55);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+
+    .menu-screen.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* Vibrant Palette Synthwave Title */
+    .logo-container {
+      text-align: center;
+      margin-bottom: 24px;
+      animation: logoFloat 3s ease-in-out infinite alternate;
+    }
+
+    @keyframes logoFloat {
+      0% { transform: translateY(0px); }
+      100% { transform: translateY(-8px); }
+    }
+
+    .game-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: clamp(38px, 9vw, 60px);
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: -1px;
+      text-transform: uppercase;
+      color: #ffffff;
+      text-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff;
+      line-height: 0.95;
+    }
+
+    .game-subtitle {
+      font-size: 11px;
+      letter-spacing: 0.4em;
+      color: var(--neon-cyan);
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-top: 10px;
+      opacity: 0.85;
+    }
+
+    /* Primary Vibrant Cyan CTA Button */
+    .btn-neon {
+      position: relative;
+      background: var(--neon-cyan);
+      border: none;
+      color: #000000;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 17px;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      padding: 16px 36px;
+      border-radius: 18px;
+      cursor: pointer;
+      text-transform: uppercase;
+      box-shadow: 0 0 30px rgba(34, 211, 238, 0.55), inset 0 0 10px rgba(255, 255, 255, 0.4);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .btn-neon:hover, .btn-neon:focus {
+      background: #38bdf8;
+      box-shadow: 0 0 40px rgba(34, 211, 238, 0.75), inset 0 0 15px rgba(255, 255, 255, 0.6);
+      transform: scale(1.02);
+    }
+
+    .btn-neon:active {
+      transform: scale(0.95);
+    }
+
+    .btn-secondary {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      box-shadow: none;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 16px;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.35);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+    }
+
+    /* Leaderboard Vibrant Glass Card */
+    .leaderboard-card {
+      width: 100%;
+      max-width: 360px;
+      max-height: 240px;
+      margin-top: 22px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 24px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 0, 255, 0.12);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+    }
+
+    .card-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--neon-pink);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card-tag {
+      font-size: 10px;
+      color: rgba(255, 255, 255, 0.4);
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .leaderboard-list {
+      overflow-y: auto;
+      flex: 1;
+      padding-right: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .leaderboard-list::-webkit-scrollbar {
+      width: 4px;
+    }
+    .leaderboard-list::-webkit-scrollbar-thumb {
+      background: var(--neon-cyan);
+      border-radius: 4px;
+    }
+
+    .leaderboard-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      padding: 6px 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      transition: background 0.2s ease;
+    }
+
+    .leaderboard-item.rank-1 {
+      border-color: rgba(34, 211, 238, 0.4);
+      background: rgba(255, 255, 255, 0.07);
+      color: #ffffff;
+    }
+    .leaderboard-item.rank-1 .item-rank {
+      color: var(--neon-cyan);
+    }
+    .leaderboard-item.rank-1 .item-score {
+      color: var(--neon-pink);
+    }
+
+    .leaderboard-item.rank-2 {
+      border-color: rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .leaderboard-item.rank-3 {
+      border-color: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .item-rank {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      width: 26px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .item-name {
+      flex: 1;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      padding: 0 8px;
+    }
+
+    .item-score {
+      font-family: 'Orbitron', monospace;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    /* Game Over Vibrant Card */
+    .gameover-card {
+      width: 100%;
+      max-width: 360px;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(236, 72, 153, 0.5);
+      border-radius: 24px;
+      padding: 24px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 35px rgba(255, 0, 255, 0.3);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .gameover-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      font-style: italic;
+      color: var(--neon-pink);
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px #ff00ff;
+      text-transform: uppercase;
+    }
+
+    .score-summary {
+      display: flex;
+      justify-content: space-around;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .summary-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .summary-title {
+      font-size: 10px;
+      letter-spacing: 1px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    .summary-val {
+      font-family: 'Orbitron', monospace;
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--neon-cyan);
+      margin-top: 2px;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .cyber-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(34, 211, 238, 0.5);
+      border-radius: 14px;
+      padding: 12px 16px;
+      color: #fff;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      outline: none;
+      box-shadow: inset 0 0 8px rgba(34, 211, 238, 0.15);
+    }
+
+    .cyber-input:focus {
+      border-color: var(--neon-pink);
+      box-shadow: inset 0 0 12px rgba(255, 0, 255, 0.3), 0 0 10px rgba(255, 0, 255, 0.3);
+    }
+
+    .btn-save {
+      background: var(--neon-cyan);
+      border: none;
+      border-radius: 14px;
+      color: #000;
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      padding: 0 18px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-save:hover {
+      background: #38bdf8;
+    }
+
+    .btn-save:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .instructions-hint {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.65);
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      letter-spacing: 0.5px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="game-container">
+    <div class="bg-grid-overlay"></div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div class="ui-overlay">
+      <!-- IN-GAME HUD -->
+      <div id="hud">
+        <div class="hud-box">
+          <div class="hud-label">SKOR</div>
+          <div class="hud-value" id="hud-score">0</div>
+        </div>
+
+        <div class="hud-center">
+          <div class="jump-indicator">
+            <span class="jump-dot active" id="dot-jump1"></span>
+            <span class="jump-dot double active" id="dot-jump2"></span>
+            <span id="jump-text">ZIPLAMA HAZIR</span>
+          </div>
+          <div style="font-size: 11px; color: var(--neon-yellow); font-family: 'Orbitron', monospace; font-weight:700;" id="hud-multiplier">x1.0</div>
+        </div>
+
+        <div class="hud-right">
+          <button class="hud-btn" id="btn-audio" title="Ses">🔊</button>
+          <button class="hud-btn" id="btn-pause" title="Duraklat">⏸</button>
+        </div>
+      </div>
+
+      <!-- MAIN MENU -->
+      <div class="menu-screen" id="main-menu">
+        <div class="logo-container">
+          <h1 class="game-title">LUMINA LOOP</h1>
+          <p class="game-subtitle">CYBERPUNK RUNNER</p>
+        </div>
+
+        <button class="btn-neon" id="btn-play">
+          <span>⚡</span> OYUNA BAŞLA
+        </button>
+
+        <div class="instructions-hint">
+          <span>👆 Ekrana Dokun: Zıpla | Havada Tekrar: Çift Zıplama</span>
+        </div>
+
+        <!-- GLOBAL TOP 10 LEADERBOARD -->
+        <div class="leaderboard-card">
+          <div class="card-header">
+            <div class="card-title">
+              <span>🏆</span> GLOBAL TOP 10
+            </div>
+            <div class="card-tag" id="leaderboard-status">LIVE</div>
+          </div>
+          <div class="leaderboard-list" id="leaderboard-entries">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- GAME OVER MENU -->
+      <div class="menu-screen hidden" id="gameover-menu">
+        <div class="gameover-card">
+          <div class="gameover-title">SİSTEM ÇÖKTÜ</div>
+          
+          <div class="score-summary">
+            <div class="summary-item">
+              <span class="summary-title">SKOR</span>
+              <span class="summary-val" id="go-final-score">0</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-title">EN İYİ</span>
+              <span class="summary-val" id="go-high-score">0</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-title">MESAFE</span>
+              <span class="summary-val" id="go-distance">0m</span>
+            </div>
+          </div>
+
+          <div class="input-group" id="save-score-group">
+            <input type="text" id="player-name-input" class="cyber-input" placeholder="Pilot Adı Girin..." maxlength="12">
+            <button class="btn-save" id="btn-submit-score">KAYDET</button>
+          </div>
+          <div id="save-status-msg" style="font-size:12px; color:var(--neon-green); min-height:16px;"></div>
+
+          <button class="btn-neon" id="btn-restart" style="margin-top: 4px;">
+            <span>🔄</span> YENİDEN BAŞLA
+          </button>
+          
+          <button class="btn-neon btn-secondary" id="btn-mainmenu">
+            ANA MENÜ
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="vibrant-bottom-bar"></div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       LUMINA LOOP - SYNTHWAVE / CYBERPUNK 2D ENGINE
+       Pure HTML5 Canvas, Web Audio API & Vanilla JavaScript
+       ========================================================================== */
+
+    // --------------------------------------------------------------------------
+    // 1. BACKEND & LEADERBOARD INTEGRATION STUBS (FIREBASE / REST API READY)
+    // --------------------------------------------------------------------------
+    
+    /**
+     * MOCK LOCAL STORAGE FALLBACK DATA
+     * In production, this can be seamlessly swapped with Firestore or REST endpoints.
+     */
+    const DEFAULT_LEADERBOARD = [
+      { name: "CYBER_NEXUS", score: 9840 },
+      { name: "NEON_VIPER", score: 8720 },
+      { name: "SYNTH_GHOST", score: 7650 },
+      { name: "RETRO_BLADE", score: 6540 },
+      { name: "LUMINA_X", score: 5890 },
+      { name: "HYPER_DRIVE", score: 4720 },
+      { name: "VECTOR_PULSE", score: 3950 },
+      { name: "ZERO_COOL", score: 3100 },
+      { name: "PIXEL_RUNNER", score: 2400 },
+      { name: "NEO_TOKYO", score: 1850 }
+    ];
+
+    /**
+     * ==========================================================================
+     * 🔥 FIREBASE / REST API LEADERBOARD INTEGRATION
+     * Bu fonksiyonları Firebase Firestore veya kendi REST API backend'inize
+     * bağlamak için aşağıdaki açıklamaları takip edebilirsiniz.
+     * ==========================================================================
+     */
+
+    /**
+     * Global Top 10 sıralama tablosunu getirir.
+     * @returns {Promise<Array<{name: string, score: number}>>}
+     */
+    async function fetchLeaderboard() {
+      try {
+        /* 
+        // ====================================================================
+        // 🔥 GERÇEK FIREBASE FIRESTORE BAĞLANTISI İÇİN:
+        // const q = query(collection(db, "leaderboard"), orderBy("score", "desc"), limit(10));
+        // const snapshot = await getDocs(q);
+        // return snapshot.docs.map(doc => ({ name: doc.data().name, score: doc.data().score }));
+        //
+        // 🌐 VEYA REST API İÇİN:
+        // const response = await fetch("https://api.yourdomain.com/leaderboard/top10");
+        // return await response.json();
+        // ====================================================================
+        */
+
+        // Local Storage / Mock Fallback
+        const localSaved = localStorage.getItem("lumina_loop_leaderboard");
+        if (localSaved) {
+          const parsed = JSON.parse(localSaved);
+          return parsed.sort((a, b) => b.score - a.score).slice(0, 10);
+        } else {
+          localStorage.setItem("lumina_loop_leaderboard", JSON.stringify(DEFAULT_LEADERBOARD));
+          return [...DEFAULT_LEADERBOARD];
+        }
+      } catch (err) {
+        console.error("Leaderboard fetch error:", err);
+        return [...DEFAULT_LEADERBOARD];
+      }
+    }
+
+    /**
+     * Yeni skoru veritabanına kaydeder.
+     * @param {string} playerName - Oyuncu takma adı
+     * @param {number} score - Ulaşılan skor
+     * @returns {Promise<boolean>}
+     */
+    async function submitScore(playerName, score) {
+      try {
+        const cleanName = (playerName || "ANON_RUNNER").trim().toUpperCase().substring(0, 12);
+        
+        /*
+        // ====================================================================
+        // 🔥 GERÇEK FIREBASE FIRESTORE KAYIT İÇİN:
+        // await addDoc(collection(db, "leaderboard"), {
+        //   name: cleanName,
+        //   score: Number(score),
+        //   createdAt: serverTimestamp()
+        // });
+        // return true;
+        //
+        // 🌐 VEYA REST API İÇİN:
+        // const res = await fetch("https://api.yourdomain.com/leaderboard/submit", {
+        //   method: "POST",
+        //   headers: { "Content-Type": "application/json" },
+        //   body: JSON.stringify({ name: cleanName, score: Number(score) })
+        // });
+        // return res.ok;
+        // ====================================================================
+        */
+
+        // Local Storage Mock Save
+        const currentData = await fetchLeaderboard();
+        currentData.push({ name: cleanName, score: Math.floor(score) });
+        currentData.sort((a, b) => b.score - a.score);
+        const top10 = currentData.slice(0, 10);
+        localStorage.setItem("lumina_loop_leaderboard", JSON.stringify(top10));
+        return true;
+      } catch (err) {
+        console.error("Score submit error:", err);
+        return false;
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 2. SYNTHESIZER AUDIO ENGINE (Zero-dependency Web Audio API)
+    // --------------------------------------------------------------------------
+    class SynthAudioEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.bassLoopInterval = null;
+        this.bassStep = 0;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playJump() {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(160, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(480, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.15);
+      }
+
+      playDoubleJump() {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(350, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(900, this.ctx.currentTime + 0.22);
+        gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.22);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.22);
+      }
+
+      playCollect() {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(587.33, this.ctx.currentTime); // D5
+        osc.frequency.setValueAtTime(880, this.ctx.currentTime + 0.08); // A5
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.2);
+      }
+
+      playExplosion() {
+        if (!this.enabled) return;
+        this.init();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.4);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.4);
+      }
+
+      startMusic() {
+        if (this.bassLoopInterval) clearInterval(this.bassLoopInterval);
+        const notes = [65.41, 65.41, 77.78, 87.31, 98.00, 87.31, 77.78, 65.41]; // C2, Eb2, F2, G2
+        this.bassLoopInterval = setInterval(() => {
+          if (!this.enabled || !this.ctx || this.ctx.state !== 'running') return;
+          try {
+            const freq = notes[this.bassStep % notes.length];
+            this.bassStep++;
+            const osc = this.ctx.createOscillator();
+            const filter = this.ctx.createBiquadFilter();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = freq;
+            filter.type = 'lowpass';
+            filter.frequency.value = 320;
+            gain.gain.setValueAtTime(0.07, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.18);
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.18);
+          } catch(e) {}
+        }, 220);
+      }
+
+      stopMusic() {
+        if (this.bassLoopInterval) {
+          clearInterval(this.bassLoopInterval);
+          this.bassLoopInterval = null;
+        }
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 3. CORE GAME ENGINE & PROCEDURAL GENERATOR
+    // --------------------------------------------------------------------------
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // UI Elements
+    const hud = document.getElementById('hud');
+    const hudScore = document.getElementById('hud-score');
+    const hudMultiplier = document.getElementById('hud-multiplier');
+    const dotJump1 = document.getElementById('dot-jump1');
+    const dotJump2 = document.getElementById('dot-jump2');
+    const jumpText = document.getElementById('jump-text');
+    const btnAudio = document.getElementById('btn-audio');
+    const btnPause = document.getElementById('btn-pause');
+    const mainMenu = document.getElementById('main-menu');
+    const gameoverMenu = document.getElementById('gameover-menu');
+    const btnPlay = document.getElementById('btn-play');
+    const btnRestart = document.getElementById('btn-restart');
+    const btnMainMenu = document.getElementById('btn-mainmenu');
+    const btnSubmitScore = document.getElementById('btn-submit-score');
+    const playerNameInput = document.getElementById('player-name-input');
+    const saveStatusMsg = document.getElementById('save-status-msg');
+    const goFinalScore = document.getElementById('go-final-score');
+    const goHighScore = document.getElementById('go-high-score');
+    const goDistance = document.getElementById('go-distance');
+    const leaderboardEntries = document.getElementById('leaderboard-entries');
+
+    const audio = new SynthAudioEngine();
+
+    // Responsive Canvas Resizing
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+
+    function resizeCanvas() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Game State
+    const STATES = { MENU: 0, PLAYING: 1, PAUSED: 2, GAMEOVER: 3 };
+    let gameState = STATES.MENU;
+
+    let score = 0;
+    let distance = 0;
+    let multiplier = 1.0;
+    let consecutiveOrbs = 0;
+    let gameSpeed = 6;
+    const BASE_SPEED = 6;
+    const MAX_SPEED = 16;
+    let highScore = parseInt(localStorage.getItem('lumina_high_score') || '0', 10);
+    let cameraX = 0;
+    let screenShake = 0;
+
+    // Player Physics & Entity
+    const player = {
+      x: 100,
+      y: 300,
+      w: 36,
+      h: 36,
+      vx: 0,
+      vy: 0,
+      gravity: 0.65,
+      jumpForce: -13.5,
+      doubleJumpForce: -12.5,
+      grounded: false,
+      jumpsLeft: 2,
+      rotation: 0,
+      trail: [],
+      color: '#00f0ff',
+      isDoubleJumping: false,
+      burstEffect: 0
+    };
+
+    // Procedural Level System
+    let platforms = [];
+    let hazards = [];
+    let collectibles = [];
+    let particles = [];
+    let backgroundStars = [];
+    let backgroundBuildings = [];
+
+    function initBackground() {
+      backgroundStars = [];
+      for (let i = 0; i < 70; i++) {
+        backgroundStars.push({
+          x: Math.random() * width,
+          y: Math.random() * (height * 0.65),
+          size: Math.random() * 2 + 1,
+          alpha: Math.random() * 0.8 + 0.2,
+          speed: Math.random() * 0.2 + 0.05
+        });
+      }
+
+      backgroundBuildings = [];
+      let curX = 0;
+      while (curX < width + 400) {
+        const bWidth = Math.random() * 60 + 40;
+        const bHeight = Math.random() * (height * 0.4) + 80;
+        backgroundBuildings.push({
+          x: curX,
+          w: bWidth,
+          h: bHeight,
+          neonColor: Math.random() > 0.5 ? '#ff007f' : '#00f0ff'
+        });
+        curX += bWidth + Math.random() * 20;
+      }
+    }
+    initBackground();
+
+    // Level Generator Logic
+    let lastPlatformX = 0;
+    let lastPlatformY = 0;
+
+    function resetLevel() {
+      score = 0;
+      distance = 0;
+      multiplier = 1.0;
+      consecutiveOrbs = 0;
+      gameSpeed = BASE_SPEED;
+      cameraX = 0;
+      screenShake = 0;
+
+      player.x = 120;
+      player.y = height * 0.6 - 50;
+      player.vx = 0;
+      player.vy = 0;
+      player.grounded = false;
+      player.jumpsLeft = 2;
+      player.rotation = 0;
+      player.trail = [];
+      player.burstEffect = 0;
+
+      platforms = [];
+      hazards = [];
+      collectibles = [];
+      particles = [];
+
+      // Starting flat safe platforms
+      lastPlatformX = 50;
+      lastPlatformY = height * 0.65;
+      
+      // Spawn initial runway
+      createPlatform(lastPlatformX, lastPlatformY, width * 0.9, '#00f0ff');
+      lastPlatformX += width * 0.9;
+
+      // Populate future platforms ahead
+      for (let i = 0; i < 8; i++) {
+        spawnNextPlatform();
+      }
+    }
+
+    function createPlatform(x, y, w, color = '#00f0ff', moving = false) {
+      platforms.push({
+        x: x,
+        y: y,
+        w: w,
+        h: 22,
+        color: color,
+        moving: moving,
+        baseY: y,
+        moveAngle: Math.random() * Math.PI * 2,
+        moveSpeed: Math.random() * 0.04 + 0.02,
+        moveAmp: Math.random() * 40 + 20
+      });
+    }
+
+    function spawnNextPlatform() {
+      // Progressive difficulty gap and width
+      const difficulty = Math.min((distance / 1200), 1);
+      
+      const gapMin = 80 + difficulty * 40;
+      const gapMax = 160 + difficulty * 80;
+      const gap = Math.random() * (gapMax - gapMin) + gapMin;
+
+      const platWidthMin = Math.max(90, 220 - difficulty * 90);
+      const platWidthMax = Math.max(160, 380 - difficulty * 120);
+      const platWidth = Math.random() * (platWidthMax - platWidthMin) + platWidthMin;
+
+      // Calculate safe reachable height
+      const heightVariation = (Math.random() - 0.5) * 160;
+      let newY = lastPlatformY + heightVariation;
+      
+      // Keep within comfortable bounds
+      const minY = height * 0.35;
+      const maxY = height * 0.78;
+      newY = Math.max(minY, Math.min(maxY, newY));
+
+      const newX = lastPlatformX + gap;
+
+      const isMoving = Math.random() < (0.2 + difficulty * 0.25);
+      const colors = ['#00f0ff', '#ff007f', '#00ff88'];
+      const platColor = colors[Math.floor(Math.random() * colors.length)];
+
+      createPlatform(newX, newY, platWidth, platColor, isMoving);
+
+      // Procedurally add hazards (spikes) or energy collectibles
+      const spawnRoll = Math.random();
+      
+      // Spikes / Laser traps
+      if (spawnRoll < (0.35 + difficulty * 0.3) && platWidth > 120) {
+        const hazardX = newX + Math.random() * (platWidth - 60) + 20;
+        hazards.push({
+          x: hazardX,
+          y: newY - 18,
+          w: 24,
+          h: 18,
+          type: 'spike',
+          color: '#ff007f'
+        });
+      }
+
+      // Collectible Energy Orbs / Loops
+      if (Math.random() < 0.6) {
+        const orbCount = Math.floor(Math.random() * 3) + 1;
+        for (let o = 0; o < orbCount; o++) {
+          collectibles.push({
+            x: newX + (platWidth / (orbCount + 1)) * (o + 1),
+            y: newY - 35 - Math.sin((o / orbCount) * Math.PI) * 20,
+            radius: 9,
+            color: '#ffe600',
+            pulse: Math.random() * Math.PI * 2,
+            collected: false
+          });
+        }
+      }
+
+      lastPlatformX = newX + platWidth;
+      lastPlatformY = newY;
+    }
+
+    function createExplosion(x, y, color) {
+      for (let i = 0; i < 35; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 9 + 2;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd,
+          size: Math.random() * 5 + 2,
+          color: color || (Math.random() > 0.5 ? '#ff007f' : '#00f0ff'),
+          alpha: 1,
+          decay: Math.random() * 0.03 + 0.015
+        });
+      }
+    }
+
+    function createJumpSparks(x, y, color) {
+      for (let i = 0; i < 10; i++) {
+        particles.push({
+          x: x + (Math.random() - 0.5) * 20,
+          y: y,
+          vx: (Math.random() - 0.5) * 4 - gameSpeed * 0.2,
+          vy: Math.random() * 3 + 1,
+          size: Math.random() * 3 + 1,
+          color: color,
+          alpha: 0.9,
+          decay: 0.05
+        });
+      }
+    }
+
+    // --------------------------------------------------------------------------
+    // 4. INPUT HANDLING (Touch & Click & Keyboard)
+    // --------------------------------------------------------------------------
+    function handleJump() {
+      if (gameState !== STATES.PLAYING) return;
+
+      if (player.grounded || player.jumpsLeft > 0) {
+        if (player.jumpsLeft === 2) {
+          // First Jump
+          player.vy = player.jumpForce;
+          player.grounded = false;
+          player.jumpsLeft = 1;
+          audio.playJump();
+          createJumpSparks(player.x + player.w / 2, player.y + player.h, '#00f0ff');
+        } else if (player.jumpsLeft === 1) {
+          // Double Jump!
+          player.vy = player.doubleJumpForce;
+          player.jumpsLeft = 0;
+          player.burstEffect = 1.0;
+          audio.playDoubleJump();
+          createJumpSparks(player.x + player.w / 2, player.y + player.h, '#ff007f');
+        }
+        updateJumpUI();
+      }
+    }
+
+    function updateJumpUI() {
+      dotJump1.classList.toggle('active', player.jumpsLeft >= 1);
+      dotJump2.classList.toggle('active', player.jumpsLeft === 2);
+      if (player.jumpsLeft === 2) {
+        jumpText.innerText = 'ÇİFT ZIPLAMA HAZIR';
+        jumpText.style.color = '#fff';
+      } else if (player.jumpsLeft === 1) {
+        jumpText.innerText = 'ÇİFT ZIPLAMA!';
+        jumpText.style.color = 'var(--neon-pink)';
+      } else {
+        jumpText.innerText = 'ZIPLAMA TÜKENDİ';
+        jumpText.style.color = '#888';
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        if (gameState === STATES.MENU) startGame();
+        else if (gameState === STATES.GAMEOVER) restartGame();
+        else handleJump();
+      } else if (e.code === 'KeyP') {
+        togglePause();
+      }
+    });
+
+    // Touch & Pointer handling for mobile
+    window.addEventListener('pointerdown', (e) => {
+      // Prevent UI button clicks from triggering game jump
+      if (e.target.closest('.hud-btn') || e.target.closest('.menu-screen') || e.target.closest('input')) {
+        return;
+      }
+      if (gameState === STATES.PLAYING) {
+        handleJump();
+      }
+    });
+
+    // --------------------------------------------------------------------------
+    // 5. GAME LOOP & RENDERING
+    // --------------------------------------------------------------------------
+    let lastTime = performance.now();
+
+    function gameLoop(now) {
+      const dt = Math.min((now - lastTime) / 1000, 0.1);
+      lastTime = now;
+
+      update(dt);
+      render();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function update(dt) {
+      // Screen shake decay
+      if (screenShake > 0) screenShake = Math.max(0, screenShake - dt * 20);
+
+      // Background stars parallax
+      backgroundStars.forEach(star => {
+        star.x -= star.speed * (gameSpeed / BASE_SPEED);
+        if (star.x < 0) star.x = width;
+      });
+
+      if (gameState !== STATES.PLAYING) return;
+
+      // Distance & Speed scaling
+      distance += (gameSpeed * dt * 60) * 0.1;
+      score += (gameSpeed * dt * 10 * multiplier);
+      gameSpeed = Math.min(MAX_SPEED, BASE_SPEED + (distance / 600));
+
+      // Player Physics
+      player.vy += player.gravity;
+      player.y += player.vy;
+
+      // Jump rotation effect
+      if (!player.grounded) {
+        player.rotation += (gameSpeed * 0.05);
+      } else {
+        player.rotation = 0;
+      }
+
+      // Double jump burst expansion
+      if (player.burstEffect > 0) {
+        player.burstEffect = Math.max(0, player.burstEffect - dt * 3);
+      }
+
+      // Player Neon Trail
+      player.trail.unshift({ x: player.x, y: player.y, rotation: player.rotation, alpha: 0.7 });
+      if (player.trail.length > 8) player.trail.pop();
+
+      // Platform Updates & Collision Detection
+      player.grounded = false;
+
+      platforms.forEach(plat => {
+        // Move floating platforms
+        if (plat.moving) {
+          plat.moveAngle += plat.moveSpeed;
+          plat.y = plat.baseY + Math.sin(plat.moveAngle) * plat.moveAmp;
+        }
+
+        // Scroll platforms left
+        plat.x -= gameSpeed;
+
+        // Collision with top of platform
+        const pLeft = player.x;
+        const pRight = player.x + player.w;
+        const pBottom = player.y + player.h;
+        const pTop = player.y;
+
+        const platLeft = plat.x;
+        const platRight = plat.x + plat.w;
+        const platTop = plat.y;
+        const platBottom = plat.y + plat.h;
+
+        // AABB check with landing tolerance
+        if (
+          pRight > platLeft + 6 &&
+          pLeft < platRight - 6 &&
+          pBottom >= platTop &&
+          pBottom <= platTop + 18 &&
+          player.vy >= 0
+        ) {
+          player.y = platTop - player.h;
+          player.vy = 0;
+          player.grounded = true;
+          player.jumpsLeft = 2;
+          updateJumpUI();
+        }
+      });
+
+      // Spawn new platforms as world scrolls
+      lastPlatformX -= gameSpeed;
+      if (lastPlatformX < width + 300) {
+        spawnNextPlatform();
+      }
+
+      // Cleanup offscreen platforms
+      platforms = platforms.filter(p => p.x + p.w > -100);
+
+      // Hazards Update & Collision
+      hazards.forEach(hazard => {
+        hazard.x -= gameSpeed;
+
+        // Player vs Spike
+        const pCenterX = player.x + player.w / 2;
+        const pCenterY = player.y + player.h / 2;
+        const hCenterX = hazard.x + hazard.w / 2;
+        const hCenterY = hazard.y + hazard.h / 2;
+
+        const distX = Math.abs(pCenterX - hCenterX);
+        const distY = Math.abs(pCenterY - hCenterY);
+
+        if (distX < (player.w / 2 + hazard.w / 2 - 6) && distY < (player.h / 2 + hazard.h / 2 - 4)) {
+          triggerGameOver('hazard');
+        }
+      });
+      hazards = hazards.filter(h => h.x + h.w > -100);
+
+      // Collectibles Update & Collision
+      collectibles.forEach(orb => {
+        orb.x -= gameSpeed;
+        orb.pulse += dt * 5;
+
+        if (!orb.collected) {
+          const dx = (player.x + player.w / 2) - orb.x;
+          const dy = (player.y + player.h / 2) - orb.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist < (player.w / 2 + orb.radius + 6)) {
+            orb.collected = true;
+            consecutiveOrbs++;
+            multiplier = Math.min(4.0, 1.0 + (consecutiveOrbs * 0.2));
+            score += 150 * multiplier;
+            audio.playCollect();
+
+            // Collect sparkle particles
+            for (let i = 0; i < 8; i++) {
+              particles.push({
+                x: orb.x,
+                y: orb.y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.5) * 6,
+                size: Math.random() * 4 + 2,
+                color: '#ffe600',
+                alpha: 1,
+                decay: 0.04
+              });
+            }
+          }
+        }
+      });
+      collectibles = collectibles.filter(o => o.x + o.radius > -100 && !o.collected);
+
+      // Bottom Void Fall check
+      if (player.y > height + 50) {
+        triggerGameOver('void');
+      }
+
+      // Update Particles
+      particles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+      });
+      particles = particles.filter(p => p.alpha > 0);
+
+      // Update HUD
+      hudScore.innerText = Math.floor(score).toLocaleString();
+      hudMultiplier.innerText = `x${multiplier.toFixed(1)}`;
+    }
+
+    function render() {
+      ctx.save();
+
+      // Screen Shake
+      if (screenShake > 0) {
+        const shakeX = (Math.random() - 0.5) * screenShake * 12;
+        const shakeY = (Math.random() - 0.5) * screenShake * 12;
+        ctx.translate(shakeX, shakeY);
+      }
+
+      // 1. Synthwave Background Gradient
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+      bgGrad.addColorStop(0, '#0a0118');
+      bgGrad.addColorStop(0.5, '#1b0333');
+      bgGrad.addColorStop(1, '#05000c');
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      // 2. Stars
+      ctx.fillStyle = '#ffffff';
+      backgroundStars.forEach(star => {
+        ctx.globalAlpha = star.alpha;
+        ctx.fillRect(star.x, star.y, star.size, star.size);
+      });
+      ctx.globalAlpha = 1.0;
+
+      // 3. Cyberpunk Skyline Silhouettes
+      const horizonY = height * 0.75;
+      backgroundBuildings.forEach(b => {
+        const bGrad = ctx.createLinearGradient(0, horizonY - b.h, 0, horizonY);
+        bGrad.addColorStop(0, '#1c053a');
+        bGrad.addColorStop(1, '#0c001a');
+        ctx.fillStyle = bGrad;
+        ctx.fillRect(b.x - (distance * 0.15) % (width + 400), horizonY - b.h, b.w, b.h);
+        
+        // Rooftop glowing neon antenna/accent
+        ctx.fillStyle = b.neonColor;
+        ctx.shadowColor = b.neonColor;
+        ctx.shadowBlur = 8;
+        ctx.fillRect(b.x - (distance * 0.15) % (width + 400) + b.w * 0.3, horizonY - b.h - 10, 2, 10);
+        ctx.shadowBlur = 0;
+      });
+
+      // 4. Synthwave Horizon Grid
+      drawSynthwaveGrid(horizonY);
+
+      // 5. Render Platforms
+      platforms.forEach(plat => {
+        drawNeonPlatform(plat);
+      });
+
+      // 6. Render Hazards
+      hazards.forEach(hazard => {
+        drawNeonHazard(hazard);
+      });
+
+      // 7. Render Collectibles
+      collectibles.forEach(orb => {
+        drawNeonOrb(orb);
+      });
+
+      // 8. Render Player & Trail
+      if (gameState === STATES.PLAYING || gameState === STATES.PAUSED) {
+        drawPlayer();
+      }
+
+      // 9. Render Particles
+      particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      ctx.restore();
+    }
+
+    function drawSynthwaveGrid(horizonY) {
+      ctx.save();
+      const gridGrad = ctx.createLinearGradient(0, horizonY, 0, height);
+      gridGrad.addColorStop(0, 'rgba(255, 0, 127, 0.4)');
+      gridGrad.addColorStop(1, 'rgba(0, 240, 255, 0.05)');
+      
+      // Horizontal perspective grid lines
+      ctx.strokeStyle = 'rgba(0, 240, 255, 0.25)';
+      ctx.lineWidth = 1.2;
+      const lines = 8;
+      for (let i = 0; i <= lines; i++) {
+        const y = horizonY + Math.pow(i / lines, 2.2) * (height - horizonY);
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      // Perspective vertical lines
+      const vanishingX = width / 2;
+      const step = width / 12;
+      for (let x = -width; x < width * 2; x += step) {
+        const offset = (distance * 0.4) % step;
+        ctx.beginPath();
+        ctx.moveTo(vanishingX, horizonY);
+        ctx.lineTo(x - offset, height);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawNeonPlatform(plat) {
+      ctx.save();
+      ctx.shadowColor = plat.color;
+      ctx.shadowBlur = 15;
+      
+      // Top Neon Glowing Edge
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(plat.x, plat.y, plat.w, 3);
+
+      ctx.fillStyle = plat.color;
+      ctx.fillRect(plat.x, plat.y + 3, plat.w, 5);
+
+      // Platform body with dark glass synth gradient
+      const bodyGrad = ctx.createLinearGradient(plat.x, plat.y, plat.x, plat.y + plat.h);
+      bodyGrad.addColorStop(0, 'rgba(24, 6, 48, 0.95)');
+      bodyGrad.addColorStop(1, 'rgba(10, 2, 22, 0.95)');
+      ctx.fillStyle = bodyGrad;
+      ctx.fillRect(plat.x, plat.y + 8, plat.w, plat.h - 8);
+
+      // Bottom glowing accent line
+      ctx.fillStyle = plat.color;
+      ctx.fillRect(plat.x + 8, plat.y + plat.h - 2, plat.w - 16, 2);
+
+      ctx.restore();
+    }
+
+    function drawNeonHazard(hazard) {
+      ctx.save();
+      ctx.shadowColor = hazard.color;
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = hazard.color;
+
+      // Triangular spikes
+      const spikeCount = 3;
+      const spikeW = hazard.w / spikeCount;
+      for (let i = 0; i < spikeCount; i++) {
+        const sx = hazard.x + i * spikeW;
+        ctx.beginPath();
+        ctx.moveTo(sx, hazard.y + hazard.h);
+        ctx.lineTo(sx + spikeW / 2, hazard.y);
+        ctx.lineTo(sx + spikeW, hazard.y + hazard.h);
+        ctx.closePath();
+        ctx.fill();
+
+        // White hot tip
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.moveTo(sx + spikeW * 0.3, hazard.y + hazard.h * 0.4);
+        ctx.lineTo(sx + spikeW / 2, hazard.y);
+        ctx.lineTo(sx + spikeW * 0.7, hazard.y + hazard.h * 0.4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = hazard.color;
+      }
+      ctx.restore();
+    }
+
+    function drawNeonOrb(orb) {
+      ctx.save();
+      const currentR = orb.radius + Math.sin(orb.pulse) * 2;
+      
+      // Outer Glow
+      ctx.shadowColor = orb.color;
+      ctx.shadowBlur = 16;
+      ctx.strokeStyle = orb.color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(orb.x, orb.y, currentR, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Inner Core
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(orb.x, orb.y, currentR * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawPlayer() {
+      // 1. Draw Trail
+      player.trail.forEach((t, index) => {
+        ctx.save();
+        ctx.translate(t.x + player.w / 2, t.y + player.h / 2);
+        ctx.rotate(t.rotation);
+        ctx.globalAlpha = (1 - (index / player.trail.length)) * 0.4;
+        ctx.fillStyle = player.jumpsLeft === 0 ? 'var(--neon-pink)' : '#00f0ff';
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 8;
+        ctx.fillRect(-player.w / 2, -player.h / 2, player.w, player.h);
+        ctx.restore();
+      });
+
+      // 2. Double Jump Burst Ring
+      if (player.burstEffect > 0) {
+        ctx.save();
+        const burstRadius = (1 - player.burstEffect) * 60 + 20;
+        ctx.strokeStyle = '#ff007f';
+        ctx.shadowColor = '#ff007f';
+        ctx.shadowBlur = 20;
+        ctx.lineWidth = player.burstEffect * 4;
+        ctx.globalAlpha = player.burstEffect;
+        ctx.beginPath();
+        ctx.arc(player.x + player.w / 2, player.y + player.h / 2, burstRadius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // 3. Player Body (Futuristic Lumina Cube/Diamond)
+      ctx.save();
+      ctx.translate(player.x + player.w / 2, player.y + player.h / 2);
+      ctx.rotate(player.rotation);
+
+      // Outer Neon Glow Border
+      const playerColor = player.jumpsLeft === 0 ? '#ff007f' : '#00f0ff';
+      ctx.shadowColor = playerColor;
+      ctx.shadowBlur = 18;
+      ctx.strokeStyle = playerColor;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(-player.w / 2, -player.h / 2, player.w, player.h);
+
+      // Inner Core
+      const pGrad = ctx.createLinearGradient(-player.w / 2, -player.h / 2, player.w / 2, player.h / 2);
+      pGrad.addColorStop(0, '#ffffff');
+      pGrad.addColorStop(0.5, playerColor);
+      pGrad.addColorStop(1, '#0b001a');
+      ctx.fillStyle = pGrad;
+      ctx.fillRect(-player.w / 2 + 3, -player.h / 2 + 3, player.w - 6, player.h - 6);
+
+      // Center Lumina Eye / Core
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // --------------------------------------------------------------------------
+    // 6. GAME LIFECYCLE & STATE MANAGEMENT
+    // --------------------------------------------------------------------------
+    async function initLeaderboardUI() {
+      leaderboardEntries.innerHTML = '<div style="text-align:center; padding:10px; color:#aaa;">Yükleniyor...</div>';
+      const data = await fetchLeaderboard();
+      renderLeaderboard(data);
+    }
+
+    function renderLeaderboard(list) {
+      leaderboardEntries.innerHTML = '';
+      list.forEach((item, index) => {
+        const rankClass = index === 0 ? 'rank-1' : index === 1 ? 'rank-2' : index === 2 ? 'rank-3' : '';
+        const rankIcon = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
+        
+        const row = document.createElement('div');
+        row.className = `leaderboard-item ${rankClass}`;
+        row.innerHTML = `
+          <span class="item-rank">${rankIcon}</span>
+          <span class="item-name">${escapeHTML(item.name)}</span>
+          <span class="item-score">${Math.floor(item.score).toLocaleString()}</span>
+        `;
+        leaderboardEntries.appendChild(row);
+      });
+    }
+
+    function escapeHTML(str) {
+      return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[tag] || tag));
+    }
+
+    function startGame() {
+      audio.init();
+      audio.startMusic();
+      resetLevel();
+      gameState = STATES.PLAYING;
+      mainMenu.classList.add('hidden');
+      gameoverMenu.classList.add('hidden');
+      hud.style.display = 'flex';
+      updateJumpUI();
+    }
+
+    function togglePause() {
+      if (gameState === STATES.PLAYING) {
+        gameState = STATES.PAUSED;
+        btnPause.innerText = '▶';
+      } else if (gameState === STATES.PAUSED) {
+        gameState = STATES.PLAYING;
+        btnPause.innerText = '⏸';
+      }
+    }
+
+    function triggerGameOver(reason) {
+      gameState = STATES.GAMEOVER;
+      screenShake = 1.0;
+      audio.playExplosion();
+      createExplosion(player.x + player.w / 2, player.y + player.h / 2, player.color);
+
+      // Save highscore
+      const finalScore = Math.floor(score);
+      if (finalScore > highScore) {
+        highScore = finalScore;
+        localStorage.setItem('lumina_high_score', highScore.toString());
+      }
+
+      // Update Game Over UI
+      goFinalScore.innerText = finalScore.toLocaleString();
+      goHighScore.innerText = highScore.toLocaleString();
+      goDistance.innerText = `${Math.floor(distance)}m`;
+      saveStatusMsg.innerText = '';
+      btnSubmitScore.disabled = false;
+
+      hud.style.display = 'none';
+      setTimeout(() => {
+        gameoverMenu.classList.remove('hidden');
+      }, 400);
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function returnToMainMenu() {
+      gameState = STATES.MENU;
+      gameoverMenu.classList.add('hidden');
+      mainMenu.classList.remove('hidden');
+      hud.style.display = 'none';
+      audio.stopMusic();
+      initLeaderboardUI();
+    }
+
+    // --------------------------------------------------------------------------
+    // 7. EVENT LISTENERS
+    // --------------------------------------------------------------------------
+    btnPlay.addEventListener('click', startGame);
+    btnRestart.addEventListener('click', restartGame);
+    btnMainMenu.addEventListener('click', returnToMainMenu);
+    btnPause.addEventListener('click', togglePause);
+
+    btnAudio.addEventListener('click', () => {
+      audio.enabled = !audio.enabled;
+      btnAudio.innerText = audio.enabled ? '🔊' : '🔇';
+      if (audio.enabled && gameState === STATES.PLAYING) {
+        audio.startMusic();
+      } else {
+        audio.stopMusic();
+      }
+    });
+
+    btnSubmitScore.addEventListener('click', async () => {
+      const name = playerNameInput.value.trim();
+      if (!name) {
+        saveStatusMsg.style.color = '#ff007f';
+        saveStatusMsg.innerText = 'Lütfen geçerli bir isim girin!';
+        return;
+      }
+
+      btnSubmitScore.disabled = true;
+      saveStatusMsg.style.color = '#00f0ff';
+      saveStatusMsg.innerText = 'Skor kaydediliyor...';
+
+      const success = await submitScore(name, Math.floor(score));
+      if (success) {
+        saveStatusMsg.style.color = '#00ff88';
+        saveStatusMsg.innerText = '✓ Skor başarıyla kaydedildi!';
+        await initLeaderboardUI();
+      } else {
+        saveStatusMsg.style.color = '#ff007f';
+        saveStatusMsg.innerText = 'Kayıt başarısız oldu.';
+        btnSubmitScore.disabled = false;
+      }
+    });
+
+    // Start App & Game Loop
+    initLeaderboardUI();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
